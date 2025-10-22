@@ -1,7 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // ===== Настройки =====
-// Переменные окружения или можно вставить токен напрямую для теста
 const TOKEN = process.env.BOT_TOKEN || "8136440725:AAGXTzGcuASyTFB5HfYj3QZQ5c9exoALGkQ";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "-1008136440725";
 
@@ -18,7 +17,7 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(chatId, '👋 Привет! Введите ваше ФИО:');
 });
 
-// ===== Обработка всех сообщений =====
+// ===== Обработка сообщений и кнопок =====
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -37,25 +36,49 @@ bot.on('message', (msg) => {
     case 'DATE':
       state.data.date = text;
       state.step = 'MACHINE';
-      bot.sendMessage(chatId, 'Выберите тип станка:\n1️⃣ ЧПУ\n2️⃣ Токарный\n3️⃣ Фрезерный');
+      bot.sendMessage(chatId, 'Выберите тип станка:', {
+        reply_markup: {
+          keyboard: [['ЧПУ', 'Токарный', 'Фрезерный']],
+          one_time_keyboard: true,
+          resize_keyboard: true
+        }
+      });
       break;
 
     case 'MACHINE':
       state.data.machine = text;
       state.step = 'Q1';
-      bot.sendMessage(chatId, 'Станок работает? (ДА/НЕТ)');
+      bot.sendMessage(chatId, 'Станок работает?', {
+        reply_markup: {
+          keyboard: [['ДА', 'НЕТ']],
+          one_time_keyboard: true,
+          resize_keyboard: true
+        }
+      });
       break;
 
     case 'Q1':
       state.data.q1 = text;
       state.step = 'Q2';
-      bot.sendMessage(chatId, 'Станок откалиброван? (ДА/НЕТ)');
+      bot.sendMessage(chatId, 'Станок откалиброван?', {
+        reply_markup: {
+          keyboard: [['ДА', 'НЕТ']],
+          one_time_keyboard: true,
+          resize_keyboard: true
+        }
+      });
       break;
 
     case 'Q2':
       state.data.q2 = text;
       state.step = 'Q3';
-      bot.sendMessage(chatId, 'Станок нуждается в обслуживании? (ДА/НЕТ)');
+      bot.sendMessage(chatId, 'Станок нуждается в обслуживании?', {
+        reply_markup: {
+          keyboard: [['ДА', 'НЕТ']],
+          one_time_keyboard: true,
+          resize_keyboard: true
+        }
+      });
       break;
 
     case 'Q3':
@@ -80,8 +103,6 @@ bot.on('message', (msg) => {
       state.data.a3 = text;
 
       const d = state.data;
-
-      // Формируем отчёт
       const report = `📋 Отчёт по станку\n\n` +
                      `👤 ФИО: ${d.fio}\n` +
                      `📅 Дата: ${d.date}\n` +
@@ -93,13 +114,11 @@ bot.on('message', (msg) => {
                      `Кнопок работает: ${d.a2}\n` +
                      `Рабочее поле: ${d.a3} см`;
 
-      // Отправляем руководителю
       bot.sendMessage(ADMIN_CHAT_ID, report);
+      bot.sendMessage(chatId, '✅ Отчёт отправлен руководителю. Спасибо!', {
+        reply_markup: { remove_keyboard: true }
+      });
 
-      // Подтверждение сотруднику
-      bot.sendMessage(chatId, '✅ Отчёт отправлен руководителю. Спасибо!');
-
-      // Очистка состояния пользователя
       delete userState[chatId];
       break;
   }
